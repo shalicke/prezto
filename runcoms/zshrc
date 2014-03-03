@@ -12,3 +12,33 @@ fi
 
 # Customize to your needs...
 
+# Add MacPorts paths.
+
+export MANPATH=/opt/local/share/man:/usr/share/man:$MANPATH
+typeset -U MANPATH
+
+
+export PATH=/opt/local/Library/Frameworks/Python.framework/Versions/3.3/bin:$HOME/.cask/bin:$HOME/bin:$HOME/.rbenv/bin:/opt/local/libexec/gnubin:/opt/local/bin:/opt/local/sbin:$PATH
+typeset -U PATH
+
+autoload -Uz promptinit
+promptinit
+prompt steeef
+
+export FPATH="$FPATH:/opt/local/share/zsh/site-functions/"
+if [ -f /opt/local/etc/profile.d/autojump.zsh ]; then
+    . /opt/local/etc/profile.d/autojump.zsh
+fi
+
+typeset -U FPATH
+
+# Source aliases.
+. ~/.zsh_aliases
+
+# rbenv
+eval "$(rbenv init -)"
+
+ # OPAM configuration
+. /Users/shalicke/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
+
+autoload 'zmv'
