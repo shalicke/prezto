@@ -14,11 +14,6 @@ fi
 
 # Add MacPorts GNU paths, Cask, coreutils, and gopath.
 
-# go stuff
-
-#export GOPATH="$HOME/hacking/go"
-#export GOROOT="$HOME/hg/go"
-
 export PATH=$HOME/.rbenv/bin:$PATH
 typeset -U PATH
 
@@ -51,20 +46,14 @@ autoload -Uz vcs_info
 autoload -Uz colors && colors
 autoload -Uz promptinit
 
-
-atom='%(?,%F{02}ok%f,%F{10}returned %F{01}%?%f)'
-
 precmd() { vcs_info }
-
-
-
 
 zstyle ':vcs_info:*' enable git hg
 zstyle ':vcs_info:*' check-for-changes true
 zstyle ':vcs_info:*' get-revision true
-zstyle ':vcs_info:*' actionformats '%b|%a%u%c%m'
-zstyle ':vcs_info:*' formats '%F{10}on %F{3}%b%f %m%u%c'
-zstyle ':vcs_info:*' branchformat '[%b%u%c]'
+zstyle ':vcs_info:*' actionformats '%b|%a%u%c%m%f '
+zstyle ':vcs_info:*' formats '%F{10}on %F{3}%b%f%m%u%c%f '
+zstyle ':vcs_info:*' branchformat '[%b%u%c]%f '
 zstyle ':vcs_info:*' stagedstr '%F{yellow}●%f'
 zstyle ':vcs_info:*' unstagedstr '%F{red}●%f'
 
@@ -92,12 +81,12 @@ function +vi-git-aheadbehind() {
     # for git prior to 1.7
     # ahead=$(git rev-list origin/${hook_com[branch]}..HEAD | wc -l)
     ahead=$(git rev-list ${hook_com[branch]}@{upstream}..HEAD 2>/dev/null | wc -l)
-    (( $ahead )) && gitstatus+=( "%B%F{blue}▲ ${ahead}%f%b" )
+    (( $ahead )) && gitstatus+=( "%F{blue}▲ ${ahead}%f" )
 
     # for git prior to 1.7
     # behind=$(git rev-list HEAD..origin/${hook_com[branch]} | wc -l)
     behind=$(git rev-list HEAD..${hook_com[branch]}@{upstream} 2>/dev/null | wc -l)
-    (( $behind )) && gitstatus+=( "%B%F{red}▼ ${behind}%f%b" )
+    (( $behind )) && gitstatus+=( "%F{red}▼ ${behind}%f" )
 
     hook_com[misc]+=${(j::)gitstatus}
 }
@@ -120,8 +109,12 @@ function +vi-git-remotebranch() {
     fi
 }
 
+
+
 function prompt_flags(){
-    echo -n "$atom: "
+    local atom
+    atom='%(?,%F{02}ok%f,%F{10}err %F{01}%?%f)'
+    echo -n "$atom. "
 }
 
 function prompt_vcs() {
@@ -140,63 +133,97 @@ function prompt_context() {
     fi
 }
 
+function prompt_ruby() {
+    local current_ruby
+    if [[ -n $USE_RUBY ]]; then
+        current_ruby="$(rbenv version-name)"
+        if [[ -n $VIRTUAL_ENV ]]; then
+            echo -n "%F{10}and ruby %F{01}$current_ruby%f "
+        else
+            echo -n "%F{10}using ruby %F{01}$current_ruby%f "
+        fi
+    fi
+}
+
+function prompt_python() {
+    local venv python_version
+    if [[ -n $VIRTUAL_ENV ]]; then
+        venv=${VIRTUAL_ENV:t}
+        python_version=`python --version 2>&1|cut -f2 -d' '`
+        echo -n "%F{10}using python %F{12}${python_version}%F{10}/%F{12}$venv%f "
+    fi
+}
+
+# because who wants to shell out
+
+function display_lein() {
+    local lein_file=$1
+    local tmp
+
+    read tmp < $lein_file
+    lein_info=("${(Qs: :)tmp}")
+    project_info="$lein_info[2]/$lein_info[3]"
+
+    echo -n "%F{10}with lein %F{cyan}$project_info%f "
+}
+
+function prompt_lein() {
+
+    local project lein_file project_info
+    lein_file="project.clj"
+    if [[ -n $USE_LEIN ]]; then
+        while [ $PWD != / ]; do
+            if [[ -e $lein_file ]]; then
+                display_lein $lein_file
+                break
+            else
+                cd ..
+            fi
+        done
+    fi
+}
+
+# TODO: see if there is a better way of doing this
+
+function ancestor() {
+    local parent=$1
+    local start=$PWD
+
+    while true; do
+        if [[ $PWD == $parent ]]; then
+            cd $start
+            return 0
+        elif [[ $PWD == / ]]; then
+            cd $start
+            return 127
+        else
+            cd ..
+        fi
+    done
+}
+
+
+function prompt_go() {
+    local go_ver
+    if [[ $GOPATH == $PWD && -n $USE_GO ]]; then
+        go_ver=("${(s: :)$(go version)}")
+        go_ver="${go_ver[3]/go/}"
+        echo -n "%F{10}using go %F{blue}$go_ver%f"
+    fi
+}
+
 function build_prompt() {
     prompt_flags
     prompt_context
     prompt_dir
     prompt_vcs
-}
-
-## RPrompt functions
-
-function prompt_ruby() {
-    local current_ruby
-    current_ruby="$(rbenv version-name)"
-    if [[ -n $USE_RUBY ]]; then
-        echo -n "%F{10} using ruby %F{01}$current_ruby%f"
-    fi
-}
-
-function prompt_python() {
-    local venv
-    if [[ -n $VIRTUAL_ENV ]]; then
-        venv=`basename $VIRTUAL_ENV`
-        echo -n "%F{10} in venv %F{12}$venv"
-    fi
-}
-
-function prompt_lein() {
-
-    local found lein_info
-    while [ $PWD != $HOME ]; do
-        if [[ -e ./project.clj ]]; then
-            export LEIN_ROOT=$PWD
-            if [[ -n $LEIN_ROOT || $LEIN_ROOT != $PWD ]]; then
-                lein_info=`head -n1 ./project.clj | sed -e 's/"//g' | awk '{print $2":"$3}'`
-                echo -n "$lein_info"
-                break
-            fi
-        else
-            cd ..;
-        fi
-    done;
-}
-
-function prompt_go() {
-    if [[ $GOPATH == $PWD ]]; then
-       echo -n "$(go version)"
-    fi
-}
-
-# add-zsh-hook precmd prompt_lein
-
-function build_rprompt() {
-    prompt_ruby
     prompt_python
-    prompt_go
+    prompt_ruby
     prompt_lein
+    prompt_go
 }
 
+function build_rprompt() {}
 
 function setup_prompt () {
     PROMPT='$(build_prompt)

@@ -17,9 +17,9 @@ fi
 # Editors
 #
 
-export EDITOR='nano'
-export VISUAL='nano'
-export PAGER='less'
+export EDITOR='emacs'
+export VISUAL='emacs'
+export PAGER='most'
 
 #
 # Language
@@ -41,8 +41,18 @@ typeset -gU cdpath fpath mailpath path
 #   $cdpath
 # )
 
+export GOROOT=$HOME/hg/go
+export GOPATH=$HOME/hacking/go
+
+export DEFAULT_USER=shalicke
+
 # Set the list of directories that Zsh searches for programs.
 path=(
+  $GOPATH/bin
+  $GOROOT/bin
+  $HOME/bin
+  $HOME/.cask/bin
+  /opt/local/libexec/gnubin
   /usr/local/{bin,sbin}
   $path
 )
@@ -74,4 +84,3 @@ TMPPREFIX="${TMPDIR%/}/zsh"
 if [[ ! -d "$TMPPREFIX" ]]; then
   mkdir -p "$TMPPREFIX"
 fi
-
