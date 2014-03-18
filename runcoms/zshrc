@@ -16,21 +16,13 @@ fi
 
 # go stuff
 
-export GOPATH="$HOME/hacking/go"
-export GOROOT="$HOME/hg/go"
+#export GOPATH="$HOME/hacking/go"
+#export GOROOT="$HOME/hg/go"
 
-export PATH=$GOPATH/bin:$GOROOT/bin:$HOME/bin:$HOME/.cask/bin:$HOME/.rbenv/bin:/opt/local/libexec/gnubin:$PATH
+export PATH=$HOME/.rbenv/bin:$PATH
 typeset -U PATH
 
-if [ -f /opt/local/etc/profile.d/autojump.zsh ]; then
-    . /opt/local/etc/profile.d/autojump.zsh
-fi
-
-typeset -U FPATH
-
-
-
-# Source aliases.
+ # Source aliases.
 source $HOME/.zsh_aliases
 
 # rbenv
@@ -39,7 +31,10 @@ eval "$(rbenv init -)"
 # fasd
 eval "$(fasd --init auto)"
 
-
+# python virtualenv
+source /opt/local/Library/Frameworks/Python.framework/Versions/3.3/bin/virtualenvwrapper.sh
+export WORKON_HOME="$HOME/.python-virtualenvs"
+export VIRTUAL_ENV_DISABLE_PROMPT=1
 
 # OPAM configuration
 . $HOME/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
@@ -47,130 +42,166 @@ eval "$(fasd --init auto)"
 # zmv -- because it's amazing.
 autoload 'zmv'
 
-
+########################################
 ## BEGIN PROMPT STUFF
-
-autoload -U colors
-
-typeset -A cr
-cr[tl]='⌜'
-cr[tr]='⌝'
-cr[bl]='⌞'
-cr[br]='⌟'
-line=''
-
-smiley="%(?,%{$fg[green]%}☺%{$reset_color%},%{$fg[red]%}☹%{$reset_color%})"
-
-atom='⚛'
-export PS2=${atom}
-
-### Segment drawing
-# A few utility functions to make it easy and re-usable to draw segmented prompts
-
-CURRENT_BG='NONE'
-SEGMENT_SEPARATOR='⮀'
-
-# Begin a segment
-# Takes two arguments, background and foreground. Both can be omitted,
-# rendering default background/foreground.
-prompt_segment() {
-  local bg fg
-  [[ -n $1 ]] && bg="%K{$1}" || bg="%k"
-  [[ -n $2 ]] && fg="%F{$2}" || fg="%f"
-  if [[ $CURRENT_BG != 'NONE' && $1 != $CURRENT_BG ]]; then
-    echo -n " %{$bg%F{$CURRENT_BG}%}$SEGMENT_SEPARATOR%{$fg%} "
-  else
-    echo -n "%{$bg%}%{$fg%} "
-  fi
-  CURRENT_BG=$1
-  [[ -n $3 ]] && echo -n $3
-}
-
-# End the prompt, closing any open segments
-prompt_end() {
-  if [[ -n $CURRENT_BG ]]; then
-    echo -n " %{%k%F{$CURRENT_FG}%}$SEGMENT_SEPARATOR"
-  else
-    echo -n "%{%k%}"
-  fi
-  echo -n "%{%f%}"
-  CURRENT_BG=''
-}
-
-
-# Context: user@hostname (who am I and where am I)
-prompt_context() {
-  local user=`whoami`
-
-  if [[ "$user" != "$DEFAULT_USER" || -n "$SSH_CLIENT" ]]; then
-    prompt_segment white brightwhite "%(!.%{%F{white}%}.)$user@%m"
-  fi
-}
-
-# useful chars
-#
-#    ZSH_THEME_GIT_PROMPT_DIRTY='±'
-#     ref=$(git symbolic-ref HEAD 2> /dev/null) || ref="➦ $(git show-ref --head -s --abbrev |head -n1 2> /dev/null)"
-#    echo -n "${ref/refs\/heads\//⭠ }$dirty"
-
-
-# Dir: current working directory
-#prompt_dir() {
-#  prompt_segment brightcyan red '%~'
-#}
-
-# Status:
-# - was there an error
-# - am I root
-# - are there background jobs?
-
-#prompt_status() {
-#  local symbols
-#  symbols=()
-#  [[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}✘"
-#  [[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}⚡"
-#  [[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}⚙"
-#  [[ -n "$symbols" ]] && prompt_segment black default "$symbols"
-# }
-
-# python virtualenv
-
-source /opt/local/Library/Frameworks/Python.framework/Versions/3.3/bin/virtualenvwrapper.sh
-export WORKON_HOME="$HOME/.python-virtualenvs"
-
-# blog stuff
-alias nik='workon nikola'
-alias cdn='cd ~/git/nikola/neuroses'
-alias nC='nikola clean'
-alias nA='nikola auto'
-
-## Main prompt
-
-# git prompt stuff
-zstyle ':vcs_info:*' enable git
-zstyle ':vcs_info:*' check-for-changes true
-
-
 
 setopt prompt_subst
 
 autoload -Uz vcs_info
+autoload -Uz colors && colors
+autoload -Uz promptinit
 
-zstyle ':vcs_info:*' actionformats \
-    '%F{5}(%f%s%F{5})%F{3}-%F{5}[%F{2}%b%F{3}|%F{1}%a%F{5}]%f '
-zstyle ':vcs_info:*' formats       \
-    '%F{5}(%f%s%F{5})%F{3}-%F{5}[%F{2}%b%F{5}]%f '
-zstyle ':vcs_info:*' branchformat '%b%F{1}:%F{3}%r'
+
+atom='%(?,%F{02}ok%f,%F{10}returned %F{01}%?%f)'
 
 precmd() { vcs_info }
 
-# what do i want prompt to look like?
-
-# - 2 line
-# return code / history
-# git info -- branch, diverged, etc
 
 
 
+zstyle ':vcs_info:*' enable git hg
+zstyle ':vcs_info:*' check-for-changes true
+zstyle ':vcs_info:*' get-revision true
+zstyle ':vcs_info:*' actionformats '%b|%a%u%c%m'
+zstyle ':vcs_info:*' formats '%F{10}on %F{3}%b%f %m%u%c'
+zstyle ':vcs_info:*' branchformat '[%b%u%c]'
+zstyle ':vcs_info:*' stagedstr '%F{yellow}●%f'
+zstyle ':vcs_info:*' unstagedstr '%F{red}●%f'
 
-PS1='%F{5}[%F{2}%n%F{5}] %F{3}%3~ ${vcs_info_msg_0_}%f%# '
+zstyle ':vcs_info:git*+set-message:*' hooks git-untracked git-aheadbehind git-remotebranch
+
+### git: Show marker (T) if there are untracked files in repository
+# Make sure you have added staged to your 'formats':  %c
+function +vi-git-untracked(){
+    if [[ $(git rev-parse --is-inside-work-tree 2> /dev/null) == 'true' ]] && \
+        git status --porcelain | fgrep '??' &> /dev/null ; then
+        # This will show the marker if there are any untracked files in repo.
+        # If instead you want to show the marker only if there are untracked
+        # files in $PWD, use:
+        #[[ -n $(git ls-files --others --exclude-standard) ]] ; then
+        hook_com[unstaged]+='%B%F{magenta}●%f%b'
+    fi
+}
+
+### git: Show +N/-N when your local branch is ahead-of or behind remote HEAD.
+# Make sure you have added misc to your 'formats':  %m
+function +vi-git-aheadbehind() {
+    local ahead behind
+    local -a gitstatus
+
+    # for git prior to 1.7
+    # ahead=$(git rev-list origin/${hook_com[branch]}..HEAD | wc -l)
+    ahead=$(git rev-list ${hook_com[branch]}@{upstream}..HEAD 2>/dev/null | wc -l)
+    (( $ahead )) && gitstatus+=( "%B%F{blue}▲ ${ahead}%f%b" )
+
+    # for git prior to 1.7
+    # behind=$(git rev-list HEAD..origin/${hook_com[branch]} | wc -l)
+    behind=$(git rev-list HEAD..${hook_com[branch]}@{upstream} 2>/dev/null | wc -l)
+    (( $behind )) && gitstatus+=( "%B%F{red}▼ ${behind}%f%b" )
+
+    hook_com[misc]+=${(j::)gitstatus}
+}
+
+### git: Show remote branch name for remote-tracking branches
+# Make sure you have added staged to your 'formats':  %b
+function +vi-git-remotebranch() {
+    local remote
+
+    # Are we on a remote-tracking branch?
+    remote=${$(git rev-parse --verify ${hook_com[branch]}@{upstream} \
+        --symbolic-full-name 2>/dev/null)/refs\/remotes\/}
+
+    # The first test will show a tracking branch whenever there is one. The
+    # second test, however, will only show the remote branch's name if it
+    # differs from the local one.
+
+    if [[ -n ${remote} && ${remote#*/} != ${hook_com[branch]} ]] ; then
+        hook_com[branch]="${hook_com[branch]}(%F{cyan}${remote}%f)"
+    fi
+}
+
+function prompt_flags(){
+    echo -n "$atom: "
+}
+
+function prompt_vcs() {
+    echo -n ${vcs_info_msg_0_}
+}
+
+function prompt_dir(){
+    echo -n '%F{10}in %F{01}%2~%f '
+}
+
+function prompt_context() {
+    local user=`whoami`
+
+    if [[ "$user" != "$DEFAULT_USER" || -n "$SSH_USER" ]]; then
+        echo -n '%F{10}as %F{05}%n%f '
+    fi
+}
+
+function build_prompt() {
+    prompt_flags
+    prompt_context
+    prompt_dir
+    prompt_vcs
+}
+
+## RPrompt functions
+
+function prompt_ruby() {
+    local current_ruby
+    current_ruby="$(rbenv version-name)"
+    if [[ -n $USE_RUBY ]]; then
+        echo -n "%F{10} using ruby %F{01}$current_ruby%f"
+    fi
+}
+
+function prompt_python() {
+    local venv
+    if [[ -n $VIRTUAL_ENV ]]; then
+        venv=`basename $VIRTUAL_ENV`
+        echo -n "%F{10} in venv %F{12}$venv"
+    fi
+}
+
+function prompt_lein() {
+
+    local found lein_info
+    while [ $PWD != $HOME ]; do
+        if [[ -e ./project.clj ]]; then
+            export LEIN_ROOT=$PWD
+            if [[ -n $LEIN_ROOT || $LEIN_ROOT != $PWD ]]; then
+                lein_info=`head -n1 ./project.clj | sed -e 's/"//g' | awk '{print $2":"$3}'`
+                echo -n "$lein_info"
+                break
+            fi
+        else
+            cd ..;
+        fi
+    done;
+}
+
+function prompt_go() {
+    if [[ $GOPATH == $PWD ]]; then
+       echo -n "$(go version)"
+    fi
+}
+
+# add-zsh-hook precmd prompt_lein
+
+function build_rprompt() {
+    prompt_ruby
+    prompt_python
+    prompt_go
+    prompt_lein
+}
+
+
+function setup_prompt () {
+    PROMPT='$(build_prompt)
+%# '
+    RPROMPT='$(build_rprompt)'
+}
+
+setup_prompt "$@"
