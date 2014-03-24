@@ -1,3 +1,4 @@
+# -*- mode: sh -*-
 #
 # Executes commands at the start of an interactive session.
 #
@@ -15,7 +16,8 @@ fi
 # Add MacPorts GNU paths, Cask, coreutils, and gopath.
 
 export PATH=$HOME/.rbenv/bin:$PATH
-typeset -U PATH
+export MANPATH="/usr/local/opt/coreutils/libexec/gnuman:$MANPATH"
+typeset -U PATH MANPATH
 
  # Source aliases.
 source $HOME/.zsh_aliases
@@ -26,9 +28,11 @@ eval "$(rbenv init -)"
 # fasd
 eval "$(fasd --init auto)"
 
-# python virtualenv
-source /opt/local/Library/Frameworks/Python.framework/Versions/3.3/bin/virtualenvwrapper.sh
-export WORKON_HOME="$HOME/.python-virtualenvs"
+# pyenv
+# source /opt/local/Library/Frameworks/Python.framework/Versions/3.3/bin/virtualenvwrapper.sh
+#export WORKON_HOME="$HOME/.python-virtualenvs"
+if which pyenv > /dev/null; then eval "$(pyenv init -)"; fi
+
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
 # OPAM configuration

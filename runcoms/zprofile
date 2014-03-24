@@ -52,7 +52,8 @@ path=(
   $GOROOT/bin
   $HOME/bin
   $HOME/.cask/bin
-  /opt/local/libexec/gnubin
+  /usr/local/share/npm/bin
+  /usr/local/opt/coreutils/libexec/gnubin
   /usr/local/{bin,sbin}
   $path
 )
